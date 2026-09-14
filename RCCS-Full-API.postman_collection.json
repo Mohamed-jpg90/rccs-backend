@@ -1,0 +1,1028 @@
+{
+  "info": {
+    "name": "RCCS API - Admin, Team Leader & User",
+    "description": "Full route collection for the Russian Cultural Center Management System backend: Admin module, Team Leader module, and User (self-service) module.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api" },
+    { "key": "token", "value": "" },
+    { "key": "userId", "value": "" },
+    { "key": "targetUserId", "value": "" },
+    { "key": "clubId", "value": "" },
+    { "key": "eventId", "value": "" },
+    { "key": "badgeId", "value": "" },
+    { "key": "announcementId", "value": "" },
+    { "key": "notificationId", "value": "" },
+    { "key": "registrationId", "value": "" },
+    { "key": "certificateId", "value": "" },
+    { "key": "removalRequestId", "value": "" },
+    { "key": "contentId", "value": "" },
+    { "key": "qrToken", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register (creates a User)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "auth": { "type": "noauth" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Test User\",\n  \"email\": \"user1@rccs.com\",\n  \"password\": \"Pass@1234\",\n  \"phoneNumber\": \"01000000000\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.token) { pm.collectionVariables.set('token', data.token); }",
+                  "if (data.user && data.user.id) { pm.collectionVariables.set('userId', data.user.id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "auth": { "type": "noauth" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@rccs.com\",\n  \"password\": \"Admin@12345\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          },
+          "description": "Log in as Admin, Team Leader, or User (just change the body). Token is auto-saved into {{token}} and used by every other request."
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/auth/logout", "host": ["{{baseUrl}}"], "path": ["auth", "logout"] }
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/auth/profile", "host": ["{{baseUrl}}"], "path": ["auth", "profile"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users (Admin / Team Leader)",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/users?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "role", "value": "", "disabled": true },
+                { "key": "status", "value": "", "disabled": true },
+                { "key": "club", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get User By Id",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/users/{{targetUserId}}", "host": ["{{baseUrl}}"], "path": ["users", "{{targetUserId}}"] }
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Updated Name\",\n  \"phoneNumber\": \"01111111111\",\n  \"club\": \"{{clubId}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/users/{{targetUserId}}", "host": ["{{baseUrl}}"], "path": ["users", "{{targetUserId}}"] }
+          },
+          "description": "Team Leaders can only edit regular Users, and cannot set role. Admins can also set role (Admin / Team Leader / User)."
+        },
+        {
+          "name": "Update User (with profile image)",
+          "request": {
+            "method": "PUT",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "fullName", "value": "Updated Name", "type": "text" },
+                { "key": "profileImage", "type": "file", "src": [] }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/users/{{targetUserId}}", "host": ["{{baseUrl}}"], "path": ["users", "{{targetUserId}}"] }
+          }
+        },
+        {
+          "name": "Update User Status (Admin only)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"Inactive\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{targetUserId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{targetUserId}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Delete User (Admin only)",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/users/{{targetUserId}}", "host": ["{{baseUrl}}"], "path": ["users", "{{targetUserId}}"] }
+          },
+          "description": "If a Team Leader token is used, the API returns 403 and tells them to use the removal-request flow instead."
+        },
+        {
+          "name": "Team Leader: Request Member Removal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.request && data.request._id) { pm.collectionVariables.set('removalRequestId', data.request._id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Repeated no-shows without notice\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{targetUserId}}/removal-request",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{targetUserId}}", "removal-request"]
+            }
+          }
+        },
+        {
+          "name": "Get User's Points Ledger",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/users/{{targetUserId}}/points",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{targetUserId}}", "points"]
+            }
+          }
+        },
+        {
+          "name": "Award / Deduct Points",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"Earn\",\n  \"amount\": 50,\n  \"reason\": \"Outstanding participation this month\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{targetUserId}}/points",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{targetUserId}}", "points"]
+            }
+          }
+        },
+        {
+          "name": "Get User's Certificates",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/users/{{targetUserId}}/certificates",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{targetUserId}}", "certificates"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Me (User self-service)",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/me/profile", "host": ["{{baseUrl}}"], "path": ["me", "profile"] }
+          },
+          "description": "Profile picture, full name, phone, email, club info."
+        },
+        {
+          "name": "Get My Attendance History",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/me/attendance", "host": ["{{baseUrl}}"], "path": ["me", "attendance"] }
+          },
+          "description": "Present / Absent history across all events."
+        },
+        {
+          "name": "Get My Event Registrations",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/me/registrations", "host": ["{{baseUrl}}"], "path": ["me", "registrations"] }
+          }
+        },
+        {
+          "name": "Get My KPI / Performance",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/me/kpi", "host": ["{{baseUrl}}"], "path": ["me", "kpi"] }
+          },
+          "description": "participationRate, totalPresent/Absent, totalBadgesEarned, totalPoints."
+        },
+        {
+          "name": "Get My Points + History",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/me/points", "host": ["{{baseUrl}}"], "path": ["me", "points"] }
+          }
+        },
+        {
+          "name": "Get My Badges + Progress",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/me/badges", "host": ["{{baseUrl}}"], "path": ["me", "badges"] }
+          },
+          "description": "Earned badges + progress toward the next unearned badge."
+        },
+        {
+          "name": "Get My Certificates",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/me/certificates", "host": ["{{baseUrl}}"], "path": ["me", "certificates"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Clubs",
+      "item": [
+        {
+          "name": "Create Club (Admin / Team Leader)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.club && data.club._id) { pm.collectionVariables.set('clubId', data.club._id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "clubName", "value": "Music Club", "type": "text" },
+                { "key": "description", "value": "Club description here", "type": "text" },
+                { "key": "maxMembers", "value": "50", "type": "text" },
+                { "key": "coverImage", "type": "file", "src": [] }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/clubs", "host": ["{{baseUrl}}"], "path": ["clubs"] }
+          }
+        },
+        {
+          "name": "Get All Clubs",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/clubs?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["clubs"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "search", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Club By Id",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/clubs/{{clubId}}", "host": ["{{baseUrl}}"], "path": ["clubs", "{{clubId}}"] }
+          }
+        },
+        {
+          "name": "Update Club",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clubName\": \"Music Club Updated\",\n  \"description\": \"New description\",\n  \"maxMembers\": 60\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/clubs/{{clubId}}", "host": ["{{baseUrl}}"], "path": ["clubs", "{{clubId}}"] }
+          }
+        },
+        {
+          "name": "Delete Club",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/clubs/{{clubId}}", "host": ["{{baseUrl}}"], "path": ["clubs", "{{clubId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "Create Event (Admin / Team Leader)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.event && data.event._id) { pm.collectionVariables.set('eventId', data.event._id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title", "value": "Cultural Night", "type": "text" },
+                { "key": "description", "value": "Event description", "type": "text" },
+                { "key": "club", "value": "{{clubId}}", "type": "text" },
+                { "key": "location", "value": "Main Hall", "type": "text" },
+                { "key": "date", "value": "2026-09-01", "type": "text" },
+                { "key": "time", "value": "18:00", "type": "text" },
+                { "key": "capacity", "value": "100", "type": "text" },
+                { "key": "registrationDeadline", "value": "2026-08-28", "type": "text" },
+                { "key": "requiresApproval", "value": "false", "type": "text" },
+                { "key": "coverImage", "type": "file", "src": [] }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/events", "host": ["{{baseUrl}}"], "path": ["events"] }
+          }
+        },
+        {
+          "name": "Get All Events",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/events?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["events"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "club", "value": "", "disabled": true },
+                { "key": "status", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Event By Id",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/events/{{eventId}}", "host": ["{{baseUrl}}"], "path": ["events", "{{eventId}}"] }
+          }
+        },
+        {
+          "name": "Update Event",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Cultural Night Updated\",\n  \"status\": \"Ongoing\"\n}" },
+            "url": { "raw": "{{baseUrl}}/events/{{eventId}}", "host": ["{{baseUrl}}"], "path": ["events", "{{eventId}}"] }
+          }
+        },
+        {
+          "name": "Delete Event",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/events/{{eventId}}", "host": ["{{baseUrl}}"], "path": ["events", "{{eventId}}"] }
+          }
+        },
+        {
+          "name": "Get Event Participants (Admin / Team Leader)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/participants",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "participants"]
+            }
+          }
+        },
+        {
+          "name": "Generate Event QR Code (Admin / Team Leader)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.token) { pm.collectionVariables.set('qrToken', data.token); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/qrcode",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "qrcode"]
+            }
+          },
+          "description": "Returns { qrImageDataUrl, token, expiresIn }. Display qrImageDataUrl to attendees; token is auto-saved for the Check In request below."
+        },
+        {
+          "name": "User: Check In via QR",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"token\": \"{{qrToken}}\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/checkin",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "checkin"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Attendance (Admin / Team Leader)",
+      "item": [
+        {
+          "name": "Mark Attendance (single)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{targetUserId}}\",\n  \"attendanceStatus\": \"Present\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/attendance",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "attendance"]
+            }
+          }
+        },
+        {
+          "name": "Mark Attendance (batch)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"records\": [\n    { \"userId\": \"{{targetUserId}}\", \"attendanceStatus\": \"Present\" }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/attendance",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "attendance"]
+            }
+          }
+        },
+        {
+          "name": "Get Attendance for Event",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/attendance",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "attendance"]
+            }
+          }
+        },
+        {
+          "name": "Get Present Attendance",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/attendance/present",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "attendance", "present"]
+            }
+          }
+        },
+        {
+          "name": "Get Absent Attendance",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/attendance/absent",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "attendance", "absent"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Event Registrations",
+      "item": [
+        {
+          "name": "User: Register For Event",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.registration && data.registration._id) { pm.collectionVariables.set('registrationId', data.registration._id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/registrations",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "registrations"]
+            }
+          }
+        },
+        {
+          "name": "User: Cancel My Registration",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/registrations",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "registrations"]
+            }
+          }
+        },
+        {
+          "name": "Admin / Team Leader: Get Event Registrations",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/registrations?status=Pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "registrations"],
+              "query": [{ "key": "status", "value": "Pending", "disabled": true }]
+            }
+          }
+        },
+        {
+          "name": "Admin / Team Leader: Approve Registration",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/registrations/{{registrationId}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "registrations", "{{registrationId}}", "approve"]
+            }
+          }
+        },
+        {
+          "name": "Admin / Team Leader: Reject Registration",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/registrations/{{registrationId}}/reject",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "registrations", "{{registrationId}}", "reject"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Badges",
+      "item": [
+        {
+          "name": "Create Badge (Admin / Team Leader)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.badge && data.badge._id) { pm.collectionVariables.set('badgeId', data.badge._id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "badgeName", "value": "Best Attendance", "type": "text" },
+                { "key": "description", "value": "Awarded for perfect attendance", "type": "text" },
+                { "key": "points", "value": "100", "type": "text" },
+                { "key": "pointsRequired", "value": "500", "type": "text" },
+                { "key": "badgeImage", "type": "file", "src": [] }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/badges", "host": ["{{baseUrl}}"], "path": ["badges"] }
+          }
+        },
+        {
+          "name": "Get All Badges",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/badges", "host": ["{{baseUrl}}"], "path": ["badges"] }
+          }
+        },
+        {
+          "name": "Update Badge",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"badgeName\": \"Best Attendance Updated\",\n  \"points\": 150\n}" },
+            "url": { "raw": "{{baseUrl}}/badges/{{badgeId}}", "host": ["{{baseUrl}}"], "path": ["badges", "{{badgeId}}"] }
+          }
+        },
+        {
+          "name": "Delete Badge",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/badges/{{badgeId}}", "host": ["{{baseUrl}}"], "path": ["badges", "{{badgeId}}"] }
+          }
+        },
+        {
+          "name": "Assign Badge to User",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"userId\": \"{{targetUserId}}\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/badges/{{badgeId}}/assign",
+              "host": ["{{baseUrl}}"],
+              "path": ["badges", "{{badgeId}}", "assign"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Announcements",
+      "item": [
+        {
+          "name": "Create Announcement (Admin / Team Leader)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.announcement && data.announcement._id) { pm.collectionVariables.set('announcementId', data.announcement._id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Center closed on Friday\",\n  \"description\": \"The center will be closed for maintenance\",\n  \"priority\": \"High\",\n  \"expirationDate\": \"2026-09-10\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/announcements", "host": ["{{baseUrl}}"], "path": ["announcements"] }
+          }
+        },
+        {
+          "name": "Get All Announcements",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/announcements", "host": ["{{baseUrl}}"], "path": ["announcements"] }
+          }
+        },
+        {
+          "name": "Update Announcement",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Updated title\",\n  \"priority\": \"Medium\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/announcements/{{announcementId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["announcements", "{{announcementId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Announcement",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/announcements/{{announcementId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["announcements", "{{announcementId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Create Notification (Admin / Team Leader)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.notification && data.notification._id) { pm.collectionVariables.set('notificationId', data.notification._id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Welcome!\",\n  \"message\": \"Thanks for joining the club\",\n  \"type\": \"General\",\n  \"receiverRole\": \"All\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/notifications", "host": ["{{baseUrl}}"], "path": ["notifications"] }
+          }
+        },
+        {
+          "name": "Get My Notifications",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/notifications", "host": ["{{baseUrl}}"], "path": ["notifications"] }
+          }
+        },
+        {
+          "name": "Get All Notifications (Admin)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/notifications?all=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications"],
+              "query": [{ "key": "all", "value": "true" }]
+            }
+          }
+        },
+        {
+          "name": "Mark Notification Read",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/notifications/{{notificationId}}/read",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "{{notificationId}}", "read"]
+            }
+          }
+        },
+        {
+          "name": "Delete Notification",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/notifications/{{notificationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "{{notificationId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Content (Educational)",
+      "item": [
+        {
+          "name": "Create Content (Admin / Team Leader)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.content && data.content._id) { pm.collectionVariables.set('contentId', data.content._id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title", "value": "Intro to Folk Dance", "type": "text" },
+                { "key": "description", "value": "Beginner tutorial", "type": "text" },
+                { "key": "type", "value": "Video", "type": "text" },
+                { "key": "externalUrl", "value": "https://youtube.com/watch?v=example", "type": "text" },
+                { "key": "club", "value": "{{clubId}}", "type": "text" },
+                { "key": "file", "type": "file", "src": [] }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/content", "host": ["{{baseUrl}}"], "path": ["content"] }
+          }
+        },
+        {
+          "name": "Get Content",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/content?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["content"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "type", "value": "", "disabled": true },
+                { "key": "club", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Content",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Updated title\"\n}" },
+            "url": { "raw": "{{baseUrl}}/content/{{contentId}}", "host": ["{{baseUrl}}"], "path": ["content", "{{contentId}}"] }
+          }
+        },
+        {
+          "name": "Delete Content",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/content/{{contentId}}", "host": ["{{baseUrl}}"], "path": ["content", "{{contentId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Certificates",
+      "item": [
+        {
+          "name": "Issue Certificate (Admin / Team Leader)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.certificate && data.certificate._id) { pm.collectionVariables.set('certificateId', data.certificate._id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title", "value": "Certificate of Excellence", "type": "text" },
+                { "key": "description", "value": "For outstanding participation in 2026", "type": "text" },
+                { "key": "type", "value": "Certificate", "type": "text" },
+                { "key": "userId", "value": "{{targetUserId}}", "type": "text" },
+                { "key": "file", "type": "file", "src": [] }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/certificates", "host": ["{{baseUrl}}"], "path": ["certificates"] }
+          }
+        },
+        {
+          "name": "Download Certificate",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/certificates/{{certificateId}}/download",
+              "host": ["{{baseUrl}}"],
+              "path": ["certificates", "{{certificateId}}", "download"]
+            }
+          }
+        },
+        {
+          "name": "Delete Certificate",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/certificates/{{certificateId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["certificates", "{{certificateId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Leaderboard",
+      "item": [
+        {
+          "name": "Get Leaderboard",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/leaderboard?limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["leaderboard"],
+              "query": [{ "key": "limit", "value": "20" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Removal Requests (Admin only)",
+      "item": [
+        {
+          "name": "Get All Removal Requests",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/removal-requests?status=Pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["removal-requests"],
+              "query": [{ "key": "status", "value": "Pending", "disabled": true }]
+            }
+          }
+        },
+        {
+          "name": "Approve Removal Request",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/removal-requests/{{removalRequestId}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["removal-requests", "{{removalRequestId}}", "approve"]
+            }
+          }
+        },
+        {
+          "name": "Reject Removal Request",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/removal-requests/{{removalRequestId}}/reject",
+              "host": ["{{baseUrl}}"],
+              "path": ["removal-requests", "{{removalRequestId}}", "reject"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard (Admin / Team Leader)",
+      "item": [
+        {
+          "name": "Get Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/dashboard", "host": ["{{baseUrl}}"], "path": ["dashboard"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "API Health",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "noauth" },
+            "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
+          }
+        }
+      ]
+    }
+  ]
+}

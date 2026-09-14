@@ -1,0 +1,18 @@
+module.exports = {
+  User: require("./user_model"),
+  Club: require("./club_model"),
+  Event: require("./event_model"),
+  Attendance: require("./attendance_model"),
+  Badge: require("./badge_model"),
+  UserBadge: require("./user_badge_model"),
+  Announcement: require("./announcement_model"),
+  Notification: require("./notification_model"),
+  EventRegistration: require("./event_registration_model"),
+  PointsTransaction: require("./points_transaction_model"),
+  Certificate: require("./certificate_model"),
+  Content: require("./content_model"),
+  RemovalRequest: require("./removal_request_model"),
+  Sponsor: require("./sponsor_model"),
+  Volunteer: require("./volunteer_model"),
+  EventFeedback: require("./feedback_model"),
+};
