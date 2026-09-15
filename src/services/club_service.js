@@ -5,7 +5,7 @@ const createClub = async (data, uploadedFile) => {
     clubName: data.clubName,
     description: data.description,
     maxMembers: data.maxMembers,
-    coverImage: uploadedFile ? `/uploads/${uploadedFile.filename}` : null,
+    coverImage: uploadedFile ? uploadedFile.path : null,
   });
 };
 
@@ -35,8 +35,7 @@ const updateClub = async (id, updates, uploadedFile) => {
   if (updates.clubName !== undefined) club.clubName = updates.clubName;
   if (updates.description !== undefined) club.description = updates.description;
   if (updates.maxMembers !== undefined) club.maxMembers = updates.maxMembers;
-  if (uploadedFile) club.coverImage = `/uploads/${uploadedFile.filename}`;
-
+if (uploadedFile) club.coverImage = uploadedFile.path;
   await club.save();
   return club;
 };

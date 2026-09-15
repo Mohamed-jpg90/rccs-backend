@@ -9,7 +9,7 @@ const run = async () => {
   await connectDB();
 
   const email = (process.env.ADMIN_EMAIL || "admin@rccs.com").toLowerCase();
-  const password = process.env.ADMIN_PASSWORD || "x";
+  const password = process.env.ADMIN_PASSWORD || "Admin@12345";
   const fullName = process.env.ADMIN_NAME || "System Administrator";
 
   const existing = await User.findOne({ email });

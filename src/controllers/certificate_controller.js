@@ -1,4 +1,3 @@
-const path = require("path");
 const asyncHandler = require("../utils/async_handler");
 const certificateService = require("../services/certificate_service");
 
@@ -27,8 +26,7 @@ const downloadCertificate = asyncHandler(async (req, res) => {
   const certificate = await certificateService.getCertificateById(req.params.id);
   if (!certificate) return res.status(404).json({ message: "Certificate not found" });
 
-  const filePath = path.join(__dirname, "..", "..", certificate.fileUrl);
-  res.download(filePath, `${certificate.title}${path.extname(filePath)}`);
+  return res.redirect(certificate.fileUrl);
 });
 
 module.exports = { createCertificate, getMyCertificates, getCertificatesForUser, deleteCertificate, downloadCertificate };

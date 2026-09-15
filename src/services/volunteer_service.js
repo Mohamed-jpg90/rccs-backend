@@ -25,7 +25,7 @@ const createVolunteer = async (data, uploadedFile, creatorId) => {
     name: data.name,
     email: data.email,
     description: data.description,
-    image: `/uploads/${uploadedFile.filename}`,
+    image: uploadedFile.path,
     socialLinks: parseSocialLinks(data.socialLinks),
     linkedUser,
     createdBy: creatorId,
@@ -83,7 +83,7 @@ const updateVolunteer = async (id, updates, uploadedFile) => {
 
   if (uploadedFile) {
     const oldImage = volunteer.image;
-    volunteer.image = `/uploads/${uploadedFile.filename}`;
+    volunteer.image = uploadedFile.path;
     await volunteer.save();
     deleteUploadedFile(oldImage);
     return volunteer;

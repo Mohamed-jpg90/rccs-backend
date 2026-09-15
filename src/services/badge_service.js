@@ -9,8 +9,7 @@ const createBadge = async (data, uploadedFile) => {
     description: data.description,
     points: data.points,
     pointsRequired: data.pointsRequired,
-    badgeImage: uploadedFile ? `/uploads/${uploadedFile.filename}` : null,
-  });
+badgeImage: uploadedFile ? uploadedFile.path : null,  });
 };
 
 const getBadges = async () => Badge.find().sort({ pointsRequired: 1, createdAt: -1 });
@@ -27,7 +26,7 @@ const updateBadge = async (id, updates, uploadedFile) => {
   fields.forEach((field) => {
     if (updates[field] !== undefined) badge[field] = updates[field];
   });
-  if (uploadedFile) badge.badgeImage = `/uploads/${uploadedFile.filename}`;
+if (uploadedFile) badge.badgeImage = uploadedFile.path;
 
   await badge.save();
   return badge;

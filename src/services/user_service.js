@@ -57,7 +57,7 @@ const updateUser = async (actingUser, targetId, updates, uploadedFile) => {
   if (updates.phoneNumber !== undefined) target.phoneNumber = updates.phoneNumber;
   if (updates.role !== undefined) target.role = updates.role;
   if (updates.club !== undefined) target.club = updates.club;
-  if (uploadedFile) target.profileImage = `/uploads/${uploadedFile.filename}`;
+  if (uploadedFile) target.profileImage = uploadedFile.path;
 
   await target.save();
 

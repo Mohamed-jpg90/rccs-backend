@@ -76,7 +76,7 @@ const createEvent = async (data, creatorId, uploadedFile) => {
     status: data.status,
     requiresApproval: data.requiresApproval,
     createdBy: creatorId,
-    coverImage: uploadedFile ? `/uploads/${uploadedFile.filename}` : null,
+    coverImage: uploadedFile ? uploadedFile.path : null,
   });
 };
 
@@ -119,7 +119,7 @@ const updateEvent = async (id, updates, uploadedFile) => {
   fields.forEach((field) => {
     if (updates[field] !== undefined) event[field] = updates[field];
   });
-  if (uploadedFile) event.coverImage = `/uploads/${uploadedFile.filename}`;
+  if (uploadedFile) event.coverImage = uploadedFile.path;
 
   await event.save();
   return event;

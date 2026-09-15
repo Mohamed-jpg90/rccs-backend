@@ -11,7 +11,7 @@ const createCertificate = async (data, issuerId, uploadedFile) => {
     title: data.title,
     description: data.description,
     type: data.type,
-    fileUrl: `/uploads/${uploadedFile.filename}`,
+fileUrl: uploadedFile.path,
     user: data.userId,
     issuedBy: issuerId,
   });

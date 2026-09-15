@@ -14,7 +14,7 @@ const createSponsor = async (data, uploadedFile, creatorId) => {
     title: data.title,
     description: data.description,
     sector: data.sector,
-    image: `/uploads/${uploadedFile.filename}`,
+    image: uploadedFile.path,
     socialLinks: parseSocialLinks(data.socialLinks),
     createdBy: creatorId,
   });
@@ -65,7 +65,7 @@ const updateSponsor = async (id, updates, uploadedFile) => {
 
   if (uploadedFile) {
     const oldImage = sponsor.image;
-    sponsor.image = `/uploads/${uploadedFile.filename}`;
+    sponsor.image = uploadedFile.path;
     await sponsor.save();
     deleteUploadedFile(oldImage);
     return sponsor;
