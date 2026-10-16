@@ -2,12 +2,7 @@ const asyncHandler = require("../utils/async_handler");
 const attendanceService = require("../services/attendance_service");
 const { ATTENDANCE_STATUS } = require("../config/constants");
 
-const markAttendance = asyncHandler(async (req, res) => {
-  const records = req.body.records || [{ userId: req.body.userId, attendanceStatus: req.body.attendanceStatus }];
-  const attendance = await attendanceService.markAttendance(req.params.id, records, req.user._id);
-  res.json({ attendance });
-});
-
+ 
 // User scans the event QR code and checks themselves in.
 const checkInWithQr = asyncHandler(async (req, res) => {
   const { token } = req.body;

@@ -12,7 +12,9 @@ const authorize = require("../middlewares/rbac_middleware");
 const { ROLES } = require("../config/constants");
 
 // protect() is already applied by the parent event router
-router.post("/", authorize(ROLES.ADMIN, ROLES.TEAM_LEADER), markAttendance);
+router.post("/",
+  authorize(ROLES.ADMIN, ROLES.TEAM_LEADER),
+  markAttendance);
 router.get("/", authorize(ROLES.ADMIN, ROLES.TEAM_LEADER), getAttendance);
 router.get("/present", authorize(ROLES.ADMIN, ROLES.TEAM_LEADER), getPresentAttendance);
 router.get("/absent", authorize(ROLES.ADMIN, ROLES.TEAM_LEADER), getAbsentAttendance);
