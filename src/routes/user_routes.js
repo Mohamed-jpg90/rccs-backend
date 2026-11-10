@@ -11,6 +11,12 @@ const { ROLES } = require("../config/constants");
 
 router.use(protect);
 
+const { resetPassword, changeUserPassword } = require("../controllers/password_controller");
+const { resetPasswordValidator, changePasswordValidator } = require("../validators/password_validator");
+
+// Admin only
+router.post("/reset-password", authorize(ROLES.ADMIN), resetPasswordValidator, validate, resetPassword);
+router.patch("/:id/password", authorize(ROLES.ADMIN), changePasswordValidator, validate, changeUserPassword);
 router.get("/", authorize(ROLES.ADMIN, ROLES.TEAM_LEADER), getUsers);
 router.get("/:id", authorize(ROLES.ADMIN, ROLES.TEAM_LEADER), getUser);
 router.put(

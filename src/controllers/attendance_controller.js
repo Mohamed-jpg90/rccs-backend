@@ -1,15 +1,39 @@
+
 const asyncHandler = require("../utils/async_handler");
 const attendanceService = require("../services/attendance_service");
 const { ATTENDANCE_STATUS } = require("../config/constants");
 
- 
+const markAttendance = asyncHandler(async (req, res) => {
+  const records = req.body.records || [
+    {
+      userId: req.body.userId,
+      attendanceStatus: req.body.attendanceStatus,
+    },
+  ];
+
+  const attendance = await attendanceService.markAttendance(
+    req.params.id,
+    records,
+    req.user._id
+  );
+
+  res.json({ attendance });
+});
+
 // User scans the event QR code and checks themselves in.
 const checkInWithQr = asyncHandler(async (req, res) => {
   const { token } = req.body;
   if (!token) return res.status(400).json({ message: "token is required" });
 
-  const { attendance, event } = await attendanceService.checkInWithQr(token, req.user._id);
-  res.json({ message: `Checked in to "${event.title}" successfully`, attendance });
+  const { attendance, event } = await attendanceService.checkInWithQr(
+    token,
+    req.user._id
+  );
+
+  res.json({
+    message: `Checked in to "${event.title}" successfully`,
+    attendance,
+  });
 });
 
 const getAttendance = asyncHandler(async (req, res) => {
@@ -18,12 +42,18 @@ const getAttendance = asyncHandler(async (req, res) => {
 });
 
 const getPresentAttendance = asyncHandler(async (req, res) => {
-  const attendance = await attendanceService.getAttendanceForEvent(req.params.id, ATTENDANCE_STATUS.PRESENT);
+  const attendance = await attendanceService.getAttendanceForEvent(
+    req.params.id,
+    ATTENDANCE_STATUS.PRESENT
+  );
   res.json({ total: attendance.length, attendance });
 });
 
 const getAbsentAttendance = asyncHandler(async (req, res) => {
-  const attendance = await attendanceService.getAttendanceForEvent(req.params.id, ATTENDANCE_STATUS.ABSENT);
+  const attendance = await attendanceService.getAttendanceForEvent(
+    req.params.id,
+    ATTENDANCE_STATUS.ABSENT
+  );
   res.json({ total: attendance.length, attendance });
 });
 
