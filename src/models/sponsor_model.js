@@ -8,6 +8,7 @@ const sponsorSchema = new mongoose.Schema(
     description: { type: String, default: "" },
     sector: { type: String, default: "" },
     image: { type: String, required: true },
+    imagePublicId: { type: String, default: null },
     socialLinks: { type: socialLinksSchema, default: () => ({}) },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   },

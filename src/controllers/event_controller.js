@@ -2,7 +2,7 @@ const asyncHandler = require("../utils/async_handler");
 const eventService = require("../services/event_service");
 const qrService = require("../services/qr_service");
 const feedbackService = require("../services/feedback_service"); 
-
+const {buildEventWorkbook} = require ('../services/event_export_service')
 const createEvent = asyncHandler(async (req, res) => {
   const event = await eventService.createEvent(req.body, req.user._id, req.file);
   res.status(201).json({ event });
@@ -43,4 +43,19 @@ const getEventQrCode = asyncHandler(async (req, res) => {
   res.json(result);
 });
 
-module.exports = { createEvent, getEvents, getEvent, updateEvent, deleteEvent, getEventParticipants, getEventQrCode };
+const exportEvent  =  asyncHandler(async(req,res)=>{
+  const Workbook = await buildEventWorkbook(req.params.id)
+  res.setHeader(
+  "Content-Type",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+);
+res.setHeader(
+  "Content-Disposition",
+  `attachment; filename="event-${req.params.id}.xlsx"`
+);
+
+await  Workbook.xlsx.write(res);
+res.end()
+})  
+
+module.exports = { createEvent, getEvents, getEvent, updateEvent, deleteEvent, getEventParticipants, getEventQrCode ,exportEvent  };

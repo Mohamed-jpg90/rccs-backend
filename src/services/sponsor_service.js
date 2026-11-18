@@ -1,5 +1,5 @@
 const Sponsor = require("../models/sponsor_model");
-const deleteUploadedFile = require("../utils/delete_uploaded_file");
+const deleteCloudinaryAsset = require("../utils/delete_cloudinary_asset");
 const parseSocialLinks = require("../utils/parse_social_links");
 
 const createSponsor = async (data, uploadedFile, creatorId) => {
@@ -15,6 +15,7 @@ const createSponsor = async (data, uploadedFile, creatorId) => {
     description: data.description,
     sector: data.sector,
     image: uploadedFile.path,
+    imagePublicId: uploadedFile.filename,
     socialLinks: parseSocialLinks(data.socialLinks),
     createdBy: creatorId,
   });
@@ -65,9 +66,11 @@ const updateSponsor = async (id, updates, uploadedFile) => {
 
   if (uploadedFile) {
     const oldImage = sponsor.image;
+    const oldImagePublicId = sponsor.imagePublicId;
     sponsor.image = uploadedFile.path;
+    sponsor.imagePublicId = uploadedFile.filename;
     await sponsor.save();
-    deleteUploadedFile(oldImage);
+    await deleteCloudinaryAsset({ publicId: oldImagePublicId, url: oldImage });
     return sponsor;
   }
 
@@ -76,14 +79,15 @@ const updateSponsor = async (id, updates, uploadedFile) => {
 };
 
 const deleteSponsor = async (id) => {
-  const sponsor = await Sponsor.findByIdAndDelete(id);
+  const sponsor = await Sponsor.findById(id);
   if (!sponsor) {
     const error = new Error("Sponsor not found");
     error.status = 404;
     throw error;
   }
 
-  deleteUploadedFile(sponsor.image); // free up disk space
+  await deleteCloudinaryAsset({ publicId: sponsor.imagePublicId, url: sponsor.image });
+  await sponsor.deleteOne();
 
   return sponsor;
 };

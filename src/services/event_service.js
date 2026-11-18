@@ -1,6 +1,7 @@
 const Event = require("../models/event_model");
 const Attendance = require("../models/attendance_model");
 const { EVENT_STATUS } = require("../config/constants");
+const deleteCloudinaryAsset = require("../utils/delete_cloudinary_asset");
 
 // const computeCurrentStatus = (event) => {
 //   if (event.status === EVENT_STATUS.CANCELLED) return EVENT_STATUS.CANCELLED;
@@ -77,6 +78,7 @@ const createEvent = async (data, creatorId, uploadedFile) => {
     requiresApproval: data.requiresApproval,
     createdBy: creatorId,
     coverImage: uploadedFile ? uploadedFile.path : null,
+    coverImagePublicId: uploadedFile ? uploadedFile.filename : null,
   });
 };
 
@@ -119,19 +121,27 @@ const updateEvent = async (id, updates, uploadedFile) => {
   fields.forEach((field) => {
     if (updates[field] !== undefined) event[field] = updates[field];
   });
-  if (uploadedFile) event.coverImage = uploadedFile.path;
+  if (uploadedFile) {
+    event.coverImage = uploadedFile.path;
+    event.coverImagePublicId = uploadedFile.filename;
+  }
 
   await event.save();
   return event;
 };
 
 const deleteEvent = async (id) => {
-  const event = await Event.findByIdAndDelete(id);
+  const event = await Event.findById(id);
   if (!event) {
     const error = new Error("Event not found");
     error.status = 404;
     throw error;
   }
+  await deleteCloudinaryAsset({
+    publicId: event.coverImagePublicId,
+    url: event.coverImage,
+  });
+  await event.deleteOne();
   return event;
 };
 

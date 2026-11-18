@@ -6,6 +6,7 @@ const eventSchema = new mongoose.Schema(
     title: { type: String, required: true, trim: true },
     description: { type: String, default: "" },
     coverImage: { type: String, default: null },
+    coverImagePublicId: { type: String, default: null },
     club: { type: mongoose.Schema.Types.ObjectId, ref: "Club", required: true },
     location: { type: String, required: true },
     date: { type: Date, required: true },

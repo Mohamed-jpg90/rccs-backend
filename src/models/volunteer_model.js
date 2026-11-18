@@ -7,6 +7,7 @@ const volunteerSchema = new mongoose.Schema(
     email: { type: String, trim: true, lowercase: true, default: "" },
     description: { type: String, default: "" },
     image: { type: String, required: true },
+    imagePublicId: { type: String, default: null },
     socialLinks: { type: socialLinksSchema, default: () => ({}) },
     linkedUser: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },

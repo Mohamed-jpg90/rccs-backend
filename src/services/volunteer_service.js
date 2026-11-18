@@ -1,6 +1,6 @@
 const Volunteer = require("../models/volunteer_model");
 const User = require("../models/user_model");
-const deleteUploadedFile = require("../utils/delete_uploaded_file");
+const deleteCloudinaryAsset = require("../utils/delete_cloudinary_asset");
 const parseSocialLinks = require("../utils/parse_social_links");
 
 const createVolunteer = async (data, uploadedFile, creatorId) => {
@@ -26,6 +26,7 @@ const createVolunteer = async (data, uploadedFile, creatorId) => {
     email: data.email,
     description: data.description,
     image: uploadedFile.path,
+    imagePublicId: uploadedFile.filename,
     socialLinks: parseSocialLinks(data.socialLinks),
     linkedUser,
     createdBy: creatorId,
@@ -83,9 +84,11 @@ const updateVolunteer = async (id, updates, uploadedFile) => {
 
   if (uploadedFile) {
     const oldImage = volunteer.image;
+    const oldImagePublicId = volunteer.imagePublicId;
     volunteer.image = uploadedFile.path;
+    volunteer.imagePublicId = uploadedFile.filename;
     await volunteer.save();
-    deleteUploadedFile(oldImage);
+    await deleteCloudinaryAsset({ publicId: oldImagePublicId, url: oldImage });
     return volunteer;
   }
 
@@ -94,14 +97,15 @@ const updateVolunteer = async (id, updates, uploadedFile) => {
 };
 
 const deleteVolunteer = async (id) => {
-  const volunteer = await Volunteer.findByIdAndDelete(id);
+  const volunteer = await Volunteer.findById(id);
   if (!volunteer) {
     const error = new Error("Volunteer not found");
     error.status = 404;
     throw error;
   }
 
-  deleteUploadedFile(volunteer.image);
+  await deleteCloudinaryAsset({ publicId: volunteer.imagePublicId, url: volunteer.image });
+  await volunteer.deleteOne();
 
   return volunteer;
 };

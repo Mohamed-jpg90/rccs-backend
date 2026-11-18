@@ -9,6 +9,7 @@ const {
   deleteEvent,
   getEventParticipants,
   getEventQrCode,
+  exportEvent
 } = require("../controllers/event_controller");
 const { checkInWithQr } = require("../controllers/attendance_controller");
 
@@ -39,7 +40,7 @@ router.put("/:id", authorize(ROLES.ADMIN, ROLES.TEAM_LEADER), upload.single("cov
 router.delete("/:id", authorize(ROLES.ADMIN, ROLES.TEAM_LEADER), deleteEvent);
 router.get("/:id/participants", authorize(ROLES.ADMIN, ROLES.TEAM_LEADER), getEventParticipants);
 router.get("/:id/qrcode", authorize(ROLES.ADMIN, ROLES.TEAM_LEADER), getEventQrCode);
-
+router.get("/:id/export", authorize(ROLES.ADMIN, ROLES.TEAM_LEADER), exportEvent);
 // Any authenticated member scans the QR code shown at the event -> self check-in
 router.post("/:id/checkin", checkInWithQr);
 

@@ -1,4 +1,5 @@
 const Club = require("../models/club_model");
+const deleteCloudinaryAsset = require("../utils/delete_cloudinary_asset");
 
 const createClub = async (data, uploadedFile) => {
   return Club.create({
@@ -6,6 +7,7 @@ const createClub = async (data, uploadedFile) => {
     description: data.description,
     maxMembers: data.maxMembers,
     coverImage: uploadedFile ? uploadedFile.path : null,
+    coverImagePublicId: uploadedFile ? uploadedFile.filename : null,
   });
 };
 
@@ -35,18 +37,23 @@ const updateClub = async (id, updates, uploadedFile) => {
   if (updates.clubName !== undefined) club.clubName = updates.clubName;
   if (updates.description !== undefined) club.description = updates.description;
   if (updates.maxMembers !== undefined) club.maxMembers = updates.maxMembers;
-if (uploadedFile) club.coverImage = uploadedFile.path;
+  if (uploadedFile) {
+    club.coverImage = uploadedFile.path;
+    club.coverImagePublicId = uploadedFile.filename;
+  }
   await club.save();
   return club;
 };
 
 const deleteClub = async (id) => {
-  const club = await Club.findByIdAndDelete(id);
+  const club = await Club.findById(id);
   if (!club) {
     const error = new Error("Club not found");
     error.status = 404;
     throw error;
   }
+  await deleteCloudinaryAsset({ publicId: club.coverImagePublicId, url: club.coverImage });
+  await club.deleteOne();
   return club;
 };
 
