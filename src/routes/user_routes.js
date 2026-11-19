@@ -46,6 +46,13 @@ router.post(
   validate,
   require("../controllers/points_controller").createTransaction
 );
+router.post(
+  "/:id/points/deduct",
+  authorize(ROLES.ADMIN, ROLES.TEAM_LEADER),
+  require("../validators/points_validator").deductPointsValidator,
+  validate,
+  require("../controllers/points_controller").deductPoints
+);
 
 // Admin/Team Leader: certificates issued to a specific user
 router.get("/:id/certificates", authorize(ROLES.ADMIN, ROLES.TEAM_LEADER), require("../controllers/certificate_controller").getCertificatesForUser);

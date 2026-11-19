@@ -4,7 +4,16 @@ const { POINTS_TYPE } = require("../config/constants");
 const notificationService = require("./notification_service");
 
 // Admin / Team Leader awards or deducts points. Keeps User.totalPoints in sync.
-const createTransaction = async ({ userId, type, amount, reason, relatedEvent, relatedBadge, createdBy }) => {
+const createTransaction = async ({
+  userId,
+  type,
+  amount,
+  reason,
+  relatedEvent,
+  relatedBadge,
+  createdBy,
+  preventOverdraft = false,
+}) => {
   const user = await User.findById(userId);
   if (!user) {
     const error = new Error("User not found");
@@ -13,6 +22,11 @@ const createTransaction = async ({ userId, type, amount, reason, relatedEvent, r
   }
 
   const delta = type === POINTS_TYPE.DEDUCT ? -Math.abs(amount) : Math.abs(amount);
+  if (preventOverdraft && type === POINTS_TYPE.DEDUCT && amount > user.totalPoints) {
+    const error = new Error("Cannot deduct more points than the user's current balance");
+    error.status = 400;
+    throw error;
+  }
 
   const transaction = await PointsTransaction.create({
     user: userId,
@@ -29,6 +43,18 @@ const createTransaction = async ({ userId, type, amount, reason, relatedEvent, r
 
   return { transaction, totalPoints: user.totalPoints };
 };
+
+// Explicit deduction for the management UI. Unlike the generic transaction
+// endpoint, this rejects deductions that would make the balance negative.
+const deductPoints = async ({ userId, amount, reason, createdBy }) =>
+  createTransaction({
+    userId,
+    type: POINTS_TYPE.DEDUCT,
+    amount,
+    reason,
+    createdBy,
+    preventOverdraft: true,
+  });
 
 // Shared helper for every automatic "earn" trigger (attendance, registration,
 // feedback, club approval, badge award, ...). Never throws — a points/notification
@@ -79,4 +105,4 @@ const getUserPoints = async (userId) => {
   return { totalPoints: user.totalPoints, history };
 };
 
-module.exports = { createTransaction, awardPoints, getMyPoints, getUserPoints };
+module.exports = { createTransaction, deductPoints, awardPoints, getMyPoints, getUserPoints };

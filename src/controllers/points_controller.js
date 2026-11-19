@@ -25,6 +25,26 @@ const createTransaction = asyncHandler(async (req, res) => {
   res.status(201).json(result);
 });
 
+// Admin / Team Leader deducts points with a mandatory reason.
+const deductPoints = asyncHandler(async (req, res) => {
+  const { amount, reason } = req.body;
+  const result = await pointsService.deductPoints({
+    userId: req.params.id,
+    amount,
+    reason,
+    createdBy: req.user._id,
+  });
+
+  await notificationService.createNotification({
+    title: "Points deducted",
+    message: `${amount} points deducted: ${reason}`,
+    type: "PointsUpdated",
+    receiver: req.params.id,
+  });
+
+  res.status(201).json(result);
+});
+
 const getMyPoints = asyncHandler(async (req, res) => {
   const result = await pointsService.getMyPoints(req.user._id);
   res.json(result);
@@ -35,4 +55,4 @@ const getUserPoints = asyncHandler(async (req, res) => {
   res.json(result);
 });
 
-module.exports = { createTransaction, getMyPoints, getUserPoints };
+module.exports = { createTransaction, deductPoints, getMyPoints, getUserPoints };

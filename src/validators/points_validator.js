@@ -7,4 +7,10 @@ const pointsValidator = [
   body("reason").trim().notEmpty().withMessage("reason is required"),
 ];
 
-module.exports = { pointsValidator };
+// Dedicated deduction endpoint does not accept `type`; it is always Deduct.
+const deductPointsValidator = [
+  body("amount").isInt({ min: 1 }).withMessage("amount must be a positive integer"),
+  body("reason").isString().trim().notEmpty().withMessage("reason is required"),
+];
+
+module.exports = { pointsValidator, deductPointsValidator };

@@ -212,6 +212,22 @@
           }
         },
         {
+          "name": "Deduct User Points",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 10,\n  \"reason\": \"Missed required event without notice\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{targetUserId}}/points/deduct",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{targetUserId}}", "points", "deduct"]
+            }
+          }
+        },
+        {
           "name": "Get User's Certificates",
           "request": {
             "method": "GET",

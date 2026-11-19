@@ -2,10 +2,11 @@ const User = require("../models/user_model");
 const Club = require("../models/club_model");
 const Event = require("../models/event_model");
 const Attendance = require("../models/attendance_model");
+const EventRegistration = require("../models/event_registration_model");
 const UserBadge = require("../models/user_badge_model");
 const Announcement = require("../models/announcement_model");
 const Notification = require("../models/notification_model");
-const { ROLES, EVENT_STATUS, ATTENDANCE_STATUS } = require("../config/constants");
+const { ROLES, EVENT_STATUS, ATTENDANCE_STATUS, REGISTRATION_STATUS } = require("../config/constants");
 const getDashboardStats = async () => {
   const [
     totalUsers,
@@ -13,8 +14,7 @@ const getDashboardStats = async () => {
     totalClubs,
     totalEvents,
     upcomingEvents,
-    totalAttendanceRecords,
-    presentAttendanceRecords,
+    attendanceSummary,
     totalBadgesAwarded,
     recentAnnouncements,
     latestNotifications,
@@ -27,8 +27,36 @@ const getDashboardStats = async () => {
     Club.countDocuments(),
     Event.countDocuments(),
     Event.countDocuments({ status: EVENT_STATUS.UPCOMING }),
-    Attendance.countDocuments(),
-    Attendance.countDocuments({ attendanceStatus: ATTENDANCE_STATUS.PRESENT }),
+    // Attendance rows are created at check-in. Start with confirmed
+    // registrations so both values describe the same attendee population.
+    EventRegistration.aggregate([
+      { $match: { status: { $in: [REGISTRATION_STATUS.REGISTERED, REGISTRATION_STATUS.APPROVED] } } },
+      {
+        $lookup: {
+          from: Attendance.collection.name,
+          let: { eventId: "$event", userId: "$user" },
+          pipeline: [{
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$event", "$$eventId"] },
+                  { $eq: ["$user", "$$userId"] },
+                  { $eq: ["$attendanceStatus", ATTENDANCE_STATUS.PRESENT] },
+                ],
+              },
+            },
+          }],
+          as: "presentAttendance",
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          present: { $sum: { $cond: [{ $gt: [{ $size: "$presentAttendance" }, 0] }, 1, 0] } },
+        },
+      },
+    ]),
     UserBadge.countDocuments(),
     Announcement.find().sort({ createdAt: -1 }).limit(5),
     Notification.find().sort({ createdAt: -1 }).limit(5),
@@ -37,14 +65,31 @@ const getDashboardStats = async () => {
       { $sort: { "_id.year": 1, "_id.month": 1 } },
       { $limit: 12 },
     ]),
-    Attendance.aggregate([
+    EventRegistration.aggregate([
+      { $match: { status: { $in: [REGISTRATION_STATUS.REGISTERED, REGISTRATION_STATUS.APPROVED] } } },
+      {
+        $lookup: {
+          from: Attendance.collection.name,
+          let: { eventId: "$event", userId: "$user" },
+          pipeline: [{
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$event", "$$eventId"] },
+                  { $eq: ["$user", "$$userId"] },
+                  { $eq: ["$attendanceStatus", ATTENDANCE_STATUS.PRESENT] },
+                ],
+              },
+            },
+          }],
+          as: "presentAttendance",
+        },
+      },
       {
         $group: {
           _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
           total: { $sum: 1 },
-          present: {
-            $sum: { $cond: [{ $eq: ["$attendanceStatus", ATTENDANCE_STATUS.PRESENT] }, 1, 0] },
-          },
+          present: { $sum: { $cond: [{ $gt: [{ $size: "$presentAttendance" }, 0] }, 1, 0] } },
         },
       },
       {
@@ -78,8 +123,12 @@ const getDashboardStats = async () => {
     ]),
   ]);
 
+  const totalConfirmedRegistrations = attendanceSummary[0]?.total || 0;
+  const presentAttendanceRecords = attendanceSummary[0]?.present || 0;
   const attendanceRate =
-    totalAttendanceRecords === 0 ? 0 : Number(((presentAttendanceRecords / totalAttendanceRecords) * 100).toFixed(2));
+    totalConfirmedRegistrations === 0
+      ? 0
+      : Number(((presentAttendanceRecords / totalConfirmedRegistrations) * 100).toFixed(2));
 
   return {
     totalUsers,
