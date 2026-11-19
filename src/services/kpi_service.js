@@ -2,10 +2,19 @@ const Attendance = require("../models/attendance_model");
 const EventRegistration = require("../models/event_registration_model");
 const UserBadge = require("../models/user_badge_model");
 const User = require("../models/user_model");
+const mongoose = require("mongoose");
 const { ATTENDANCE_STATUS, REGISTRATION_STATUS } = require("../config/constants");
 
 // Personal KPI / participation rate / overall performance for the User module.
 const getMyKpi = async (userId) => {
+  // Mongoose casts values for find/count queries, but not inside aggregation
+  // pipelines.  The member overview supplies req.params.id (a string), which
+  // previously made this $match compare a string to the ObjectId in MongoDB.
+  const normalizedUserId =
+    userId instanceof mongoose.Types.ObjectId
+      ? userId
+      : new mongoose.Types.ObjectId(userId);
+
   const [attendanceSummary, totalAbsent, badgesCount, user] = await Promise.all([
     // Attendance rows are generally created only when somebody checks in.  Using
     // them as the denominator therefore makes every checked-in user look like
@@ -14,7 +23,7 @@ const getMyKpi = async (userId) => {
     EventRegistration.aggregate([
       {
         $match: {
-          user: userId,
+          user: normalizedUserId,
           status: { $in: [REGISTRATION_STATUS.REGISTERED, REGISTRATION_STATUS.APPROVED] },
         },
       },
@@ -44,9 +53,9 @@ const getMyKpi = async (userId) => {
         },
       },
     ]),
-    Attendance.countDocuments({ user: userId, attendanceStatus: ATTENDANCE_STATUS.ABSENT }),
-    UserBadge.countDocuments({ user: userId }),
-    User.findById(userId),
+    Attendance.countDocuments({ user: normalizedUserId, attendanceStatus: ATTENDANCE_STATUS.ABSENT }),
+    UserBadge.countDocuments({ user: normalizedUserId }),
+    User.findById(normalizedUserId),
   ]);
 
   const totalRegistrations = attendanceSummary[0]?.total || 0;
