@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema(
     phoneNumber: { type: String, trim: true },
     role: { type: String, enum: Object.values(ROLES), default: ROLES.USER },
     profileImage: { type: String, default: null },
+    profileImagePublicId: { type: String, default: null },
     club: { type: mongoose.Schema.Types.ObjectId, ref: "Club", default: null },
     status: { type: String, enum: Object.values(USER_STATUS), default: USER_STATUS.ACTIVE },
     // Cached running total, kept in sync by points_service on every transaction.

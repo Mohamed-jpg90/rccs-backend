@@ -1,13 +1,15 @@
 const Club = require("../models/club_model");
-const deleteCloudinaryAsset = require("../utils/delete_cloudinary_asset");
+const { uploadImage } = require("../utils/image_upload");
+const { replaceDocumentImage, removeExistingImageBestEffort } = require("../utils/image_lifecycle");
 
 const createClub = async (data, uploadedFile) => {
+  const image = uploadedFile ? await uploadImage(uploadedFile, "rccs/clubs") : null;
   return Club.create({
     clubName: data.clubName,
     description: data.description,
     maxMembers: data.maxMembers,
-    coverImage: uploadedFile ? uploadedFile.path : null,
-    coverImagePublicId: uploadedFile ? uploadedFile.filename : null,
+    coverImage: image ? image.url : null,
+    coverImagePublicId: image ? image.publicId : null,
   });
 };
 
@@ -38,8 +40,7 @@ const updateClub = async (id, updates, uploadedFile) => {
   if (updates.description !== undefined) club.description = updates.description;
   if (updates.maxMembers !== undefined) club.maxMembers = updates.maxMembers;
   if (uploadedFile) {
-    club.coverImage = uploadedFile.path;
-    club.coverImagePublicId = uploadedFile.filename;
+    await replaceDocumentImage(club, { imageField: "coverImage", publicIdField: "coverImagePublicId", folder: "rccs/clubs", label: "club" }, uploadedFile);
   }
   await club.save();
   return club;
@@ -52,7 +53,7 @@ const deleteClub = async (id) => {
     error.status = 404;
     throw error;
   }
-  await deleteCloudinaryAsset({ publicId: club.coverImagePublicId, url: club.coverImage });
+  await removeExistingImageBestEffort({ publicId: club.coverImagePublicId, url: club.coverImage }, "club");
   await club.deleteOne();
   return club;
 };

@@ -1,5 +1,6 @@
 const Sponsor = require("../models/sponsor_model");
-const deleteCloudinaryAsset = require("../utils/delete_cloudinary_asset");
+const { uploadImage } = require("../utils/image_upload");
+const { replaceDocumentImage, removeExistingImageBestEffort } = require("../utils/image_lifecycle");
 const parseSocialLinks = require("../utils/parse_social_links");
 
 const createSponsor = async (data, uploadedFile, creatorId) => {
@@ -9,13 +10,14 @@ const createSponsor = async (data, uploadedFile, creatorId) => {
     throw error;
   }
 
+  const image = await uploadImage(uploadedFile, "rccs/sponsors");
   return Sponsor.create({
     name: data.name,
     title: data.title,
     description: data.description,
     sector: data.sector,
-    image: uploadedFile.path,
-    imagePublicId: uploadedFile.filename,
+    image: image.url,
+    imagePublicId: image.publicId,
     socialLinks: parseSocialLinks(data.socialLinks),
     createdBy: creatorId,
   });
@@ -65,13 +67,7 @@ const updateSponsor = async (id, updates, uploadedFile) => {
   }
 
   if (uploadedFile) {
-    const oldImage = sponsor.image;
-    const oldImagePublicId = sponsor.imagePublicId;
-    sponsor.image = uploadedFile.path;
-    sponsor.imagePublicId = uploadedFile.filename;
-    await sponsor.save();
-    await deleteCloudinaryAsset({ publicId: oldImagePublicId, url: oldImage });
-    return sponsor;
+    await replaceDocumentImage(sponsor, { imageField: "image", publicIdField: "imagePublicId", folder: "rccs/sponsors", label: "sponsor" }, uploadedFile);
   }
 
   await sponsor.save();
@@ -86,7 +82,7 @@ const deleteSponsor = async (id) => {
     throw error;
   }
 
-  await deleteCloudinaryAsset({ publicId: sponsor.imagePublicId, url: sponsor.image });
+  await removeExistingImageBestEffort({ publicId: sponsor.imagePublicId, url: sponsor.image }, "sponsor");
   await sponsor.deleteOne();
 
   return sponsor;

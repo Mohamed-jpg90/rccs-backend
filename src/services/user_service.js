@@ -1,5 +1,6 @@
 const User = require("../models/user_model");
 const { ROLES } = require("../config/constants");
+const { replaceDocumentImage, removeExistingImageBestEffort } = require("../utils/image_lifecycle");
 
 const getUsers = async ({ search, role, status, club, page = 1, limit = 20 }) => {
   const filter = {};
@@ -57,7 +58,9 @@ const updateUser = async (actingUser, targetId, updates, uploadedFile) => {
   if (updates.phoneNumber !== undefined) target.phoneNumber = updates.phoneNumber;
   if (updates.role !== undefined) target.role = updates.role;
   if (updates.club !== undefined) target.club = updates.club;
-  if (uploadedFile) target.profileImage = uploadedFile.path;
+  if (uploadedFile) {
+    await replaceDocumentImage(target, { imageField: "profileImage", publicIdField: "profileImagePublicId", folder: "rccs/users", label: "user" }, uploadedFile);
+  }
 
   await target.save();
 
@@ -89,6 +92,7 @@ const deleteUser = async (actingUser, targetId) => {
     await clubMembershipService.removeMemberFromClub(target.club, target._id);
   }
 
+  await removeExistingImageBestEffort({ publicId: target.profileImagePublicId, url: target.profileImage }, "user");
   await target.deleteOne();
   return target;
 };

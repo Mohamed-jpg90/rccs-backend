@@ -2,8 +2,14 @@ const User = require("../models/user_model");
 const Club = require("../models/club_model");
 const Event = require("../models/event_model");
 const Attendance = require("../models/attendance_model");
+const EventRegistration = require("../models/event_registration_model");
 const ClubMembershipRequest = require("../models/club_membership_request_model");
-const { ROLES, ATTENDANCE_STATUS, CLUB_JOIN_STATUS } = require("../config/constants");
+const {
+  ROLES,
+  ATTENDANCE_STATUS,
+  CLUB_JOIN_STATUS,
+  REGISTRATION_STATUS,
+} = require("../config/constants");
 
 // Team Leader / Admin: list of a club's regular members (not the leaders themselves).
 const getClubMembers = async (clubId, { search, page = 1, limit = 20 }) => {
@@ -78,10 +84,54 @@ const getClubAnalytics = async (clubId) => {
 
   const eventIds = events.map((e) => e._id);
 
-  const attendanceAgg = await Attendance.aggregate([
-    { $match: { event: { $in: eventIds } } },
-    { $group: { _id: { event: "$event", status: "$attendanceStatus" }, count: { $sum: 1 } } },
+  const [attendanceAgg, attendanceSummary] = await Promise.all([
+    Attendance.aggregate([
+      { $match: { event: { $in: eventIds } } },
+      { $group: { _id: { event: "$event", status: "$attendanceStatus" }, count: { $sum: 1 } } },
+    ]),
+    EventRegistration.aggregate([
+      {
+        $match: {
+          event: { $in: eventIds },
+          status: { $in: [REGISTRATION_STATUS.REGISTERED, REGISTRATION_STATUS.APPROVED] },
+        },
+      },
+      {
+        $lookup: {
+          from: Attendance.collection.name,
+          let: { eventId: "$event", userId: "$user" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$event", "$$eventId"] },
+                    { $eq: ["$user", "$$userId"] },
+                    { $eq: ["$attendanceStatus", ATTENDANCE_STATUS.PRESENT] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "presentAttendance",
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          present: { $sum: { $cond: [{ $gt: [{ $size: "$presentAttendance" }, 0] }, 1, 0] } },
+        },
+      },
+    ]),
   ]);
+
+  const totalConfirmedRegistrations = attendanceSummary[0]?.total || 0;
+  const totalPresent = attendanceSummary[0]?.present || 0;
+  const attendanceRate =
+    totalConfirmedRegistrations === 0
+      ? 0
+      : Number(((totalPresent / totalConfirmedRegistrations) * 100).toFixed(2));
 
   const eventAttendance = events.map((e) => {
     const present =
@@ -111,6 +161,7 @@ const getClubAnalytics = async (clubId) => {
     totalMembers,
     maxMembers: club.maxMembers,
     fillRate: club.maxMembers ? Number(((totalMembers / club.maxMembers) * 100).toFixed(2)) : 0,
+    attendanceRate,
     top3,
     monthlyMemberGrowth: monthlyGrowthRaw.map((m) => ({ year: m._id.year, month: m._id.month, count: m.count })),
     eventAttendance,

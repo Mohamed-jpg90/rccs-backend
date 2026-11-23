@@ -15,7 +15,7 @@ const { checkInWithQr } = require("../controllers/attendance_controller");
 
 const { protect } = require("../middlewares/auth_middleware");
 const authorize = require("../middlewares/rbac_middleware");
-const upload = require("../middlewares/upload_middleware");
+const upload = require("../middlewares/image_upload_middleware");
 const validate = require("../middlewares/validate_middleware");
 const { eventValidator } = require("../validators/event_validator");
 const { ROLES } = require("../config/constants");

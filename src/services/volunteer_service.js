@@ -1,6 +1,7 @@
 const Volunteer = require("../models/volunteer_model");
 const User = require("../models/user_model");
-const deleteCloudinaryAsset = require("../utils/delete_cloudinary_asset");
+const { uploadImage } = require("../utils/image_upload");
+const { replaceDocumentImage, removeExistingImageBestEffort } = require("../utils/image_lifecycle");
 const parseSocialLinks = require("../utils/parse_social_links");
 
 const createVolunteer = async (data, uploadedFile, creatorId) => {
@@ -21,12 +22,13 @@ const createVolunteer = async (data, uploadedFile, creatorId) => {
     linkedUser = user._id;
   }
 
+  const image = await uploadImage(uploadedFile, "rccs/volunteers");
   return Volunteer.create({
     name: data.name,
     email: data.email,
     description: data.description,
-    image: uploadedFile.path,
-    imagePublicId: uploadedFile.filename,
+    image: image.url,
+    imagePublicId: image.publicId,
     socialLinks: parseSocialLinks(data.socialLinks),
     linkedUser,
     createdBy: creatorId,
@@ -83,13 +85,7 @@ const updateVolunteer = async (id, updates, uploadedFile) => {
   
 
   if (uploadedFile) {
-    const oldImage = volunteer.image;
-    const oldImagePublicId = volunteer.imagePublicId;
-    volunteer.image = uploadedFile.path;
-    volunteer.imagePublicId = uploadedFile.filename;
-    await volunteer.save();
-    await deleteCloudinaryAsset({ publicId: oldImagePublicId, url: oldImage });
-    return volunteer;
+    await replaceDocumentImage(volunteer, { imageField: "image", publicIdField: "imagePublicId", folder: "rccs/volunteers", label: "volunteer" }, uploadedFile);
   }
 
   await volunteer.save();
@@ -104,7 +100,7 @@ const deleteVolunteer = async (id) => {
     throw error;
   }
 
-  await deleteCloudinaryAsset({ publicId: volunteer.imagePublicId, url: volunteer.image });
+  await removeExistingImageBestEffort({ publicId: volunteer.imagePublicId, url: volunteer.image }, "volunteer");
   await volunteer.deleteOne();
 
   return volunteer;

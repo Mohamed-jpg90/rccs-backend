@@ -3,7 +3,7 @@ const router = express.Router();
 
 const { protect } = require("../middlewares/auth_middleware");
 const authorize = require("../middlewares/rbac_middleware");
-const upload = require("../middlewares/upload_middleware");
+const upload = require("../middlewares/image_upload_middleware");
 const validate = require("../middlewares/validate_middleware");
 const { badgeValidator, assignBadgeValidator } = require("../validators/badge_validator");
 const { ROLES } = require("../config/constants");

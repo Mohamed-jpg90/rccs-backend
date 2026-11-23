@@ -2,16 +2,18 @@ const Badge = require("../models/badge_model");
 const UserBadge = require("../models/user_badge_model");
 const User = require("../models/user_model");
 const pointsService = require("./points_service");
-const deleteCloudinaryAsset = require("../utils/delete_cloudinary_asset");
+const { uploadImage } = require("../utils/image_upload");
+const { replaceDocumentImage, removeExistingImageBestEffort } = require("../utils/image_lifecycle");
 
 const createBadge = async (data, uploadedFile) => {
+  const image = uploadedFile ? await uploadImage(uploadedFile, "rccs/badges") : null;
   return Badge.create({
     badgeName: data.badgeName,
     description: data.description,
     points: data.points,
     pointsRequired: data.pointsRequired,
-    badgeImage: uploadedFile ? uploadedFile.path : null,
-    badgeImagePublicId: uploadedFile ? uploadedFile.filename : null,
+    badgeImage: image ? image.url : null,
+    badgeImagePublicId: image ? image.publicId : null,
   });
 };
 
@@ -30,8 +32,7 @@ const updateBadge = async (id, updates, uploadedFile) => {
     if (updates[field] !== undefined) badge[field] = updates[field];
   });
   if (uploadedFile) {
-    badge.badgeImage = uploadedFile.path;
-    badge.badgeImagePublicId = uploadedFile.filename;
+    await replaceDocumentImage(badge, { imageField: "badgeImage", publicIdField: "badgeImagePublicId", folder: "rccs/badges", label: "badge" }, uploadedFile);
   }
 
   await badge.save();
@@ -45,7 +46,7 @@ const deleteBadge = async (id) => {
     error.status = 404;
     throw error;
   }
-  await deleteCloudinaryAsset({ publicId: badge.badgeImagePublicId, url: badge.badgeImage });
+  await removeExistingImageBestEffort({ publicId: badge.badgeImagePublicId, url: badge.badgeImage }, "badge");
   await UserBadge.deleteMany({ badge: id }); 
   await badge.deleteOne();
   return badge;

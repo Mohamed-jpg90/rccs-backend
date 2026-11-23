@@ -32,7 +32,7 @@ const {
 const { protect } = require("../middlewares/auth_middleware");
 const authorize = require("../middlewares/rbac_middleware");
 const { requireAdminOrClubLeader } = require("../middlewares/club_access_middleware");
-const upload = require("../middlewares/upload_middleware");
+const upload = require("../middlewares/image_upload_middleware");
 const validate = require("../middlewares/validate_middleware");
 const { clubValidator } = require("../validators/club_validator");
 const { ROLES } = require("../config/constants");

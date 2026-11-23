@@ -1,7 +1,8 @@
 const Event = require("../models/event_model");
 const Attendance = require("../models/attendance_model");
 const { EVENT_STATUS } = require("../config/constants");
-const deleteCloudinaryAsset = require("../utils/delete_cloudinary_asset");
+const { uploadImage } = require("../utils/image_upload");
+const { replaceDocumentImage, removeExistingImageBestEffort } = require("../utils/image_lifecycle");
 
 // const computeCurrentStatus = (event) => {
 //   if (event.status === EVENT_STATUS.CANCELLED) return EVENT_STATUS.CANCELLED;
@@ -65,6 +66,7 @@ const syncEventStatus = async (event) => {
 const syncEventStatuses = async (events) => Promise.all(events.map((event) => syncEventStatus(event)));
 
 const createEvent = async (data, creatorId, uploadedFile) => {
+  const image = uploadedFile ? await uploadImage(uploadedFile, "rccs/events") : null;
   return Event.create({
     title: data.title,
     description: data.description,
@@ -77,8 +79,8 @@ const createEvent = async (data, creatorId, uploadedFile) => {
     status: data.status,
     requiresApproval: data.requiresApproval,
     createdBy: creatorId,
-    coverImage: uploadedFile ? uploadedFile.path : null,
-    coverImagePublicId: uploadedFile ? uploadedFile.filename : null,
+    coverImage: image ? image.url : null,
+    coverImagePublicId: image ? image.publicId : null,
   });
 };
 
@@ -122,8 +124,7 @@ const updateEvent = async (id, updates, uploadedFile) => {
     if (updates[field] !== undefined) event[field] = updates[field];
   });
   if (uploadedFile) {
-    event.coverImage = uploadedFile.path;
-    event.coverImagePublicId = uploadedFile.filename;
+    await replaceDocumentImage(event, { imageField: "coverImage", publicIdField: "coverImagePublicId", folder: "rccs/events", label: "event" }, uploadedFile);
   }
 
   await event.save();
@@ -137,10 +138,7 @@ const deleteEvent = async (id) => {
     error.status = 404;
     throw error;
   }
-  await deleteCloudinaryAsset({
-    publicId: event.coverImagePublicId,
-    url: event.coverImage,
-  });
+  await removeExistingImageBestEffort({ publicId: event.coverImagePublicId, url: event.coverImage }, "event");
   await event.deleteOne();
   return event;
 };

@@ -11,7 +11,7 @@ const {
 
 const { protect } = require("../middlewares/auth_middleware");
 const authorize = require("../middlewares/rbac_middleware");
-const upload = require("../middlewares/upload_middleware");
+const upload = require("../middlewares/image_upload_middleware");
 const { ROLES } = require("../config/constants");
 
 router.use(protect); // "anybody" = anybody logged into the system, same as your other list endpoints
